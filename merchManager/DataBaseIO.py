@@ -37,17 +37,20 @@ class DataBaseIO():
         return results
 
     def create_table(self, table_name, *args):
-        """
-        (example create statement from http://www.sqlitetutorial.net/sqlite-create-table/)
-        CREATE TABLE contacts (
-        contact_id integer PRIMARY KEY,
-        first_name text NOT NULL,
-        last_name text NOT NULL,
-        email text NOT NULL UNIQUE,
-        phone text NOT NULL UNIQUE
-        );
-        """
-        self.__cur__.execute('Create Table ? ( ? )', (table_name, args))
+        with self.__db__:
+            """
+            (example create statement from http://www.sqlitetutorial.net/sqlite-create-table/)
+            CREATE TABLE contacts (
+            contact_id integer PRIMARY KEY,
+            first_name text NOT NULL,
+            last_name text NOT NULL,
+            email text NOT NULL UNIQUE,
+            phone text NOT NULL UNIQUE
+            );
+            """
+            sql = """Create Table ? ( ? )""", (table_name, args)
+            print(sql)
+            self.__cur__.execute("Create Table ? if not exists ( ? )", [table_name, args])
 
     def add_record(self, table_name, *args):
         self.__cur__.execute('insert into ' + table_name + ' Values ' + str(*args))
