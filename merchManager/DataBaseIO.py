@@ -38,6 +38,7 @@ class DataBaseIO():
 
     def create_table(self, table_name, *args):
         """
+        (example create statement from http://www.sqlitetutorial.net/sqlite-create-table/)
         CREATE TABLE contacts (
         contact_id integer PRIMARY KEY,
         first_name text NOT NULL,
