@@ -12,14 +12,15 @@ class DataBaseIO():
 
     def _execute_sql_(self, sql=""):
         with self.__db__:
-            statement = str(sql)
+            statement = str(sql).replace(";", "")  # some effort to prevent hostile inputs
+            print(statement)
             self.__cur__.execute(statement)
 
     def spew_header(self, table_name):
         with self.__db__:
             cur = self.__cur__
             # https://stackoverflow.com/questions/7831371/is-there-a-way-to-get-a-list-of-column-names-in-sqlite
-            column_names = [str(row[1]) for row in cur.execute("PRAGMA table_info(?)", table_name).fetchall()]
+            column_names = [str(row[1]) for row in cur.execute("PRAGMA table_info({})".format(table_name)).fetchall()]
         return column_names
 
     def spew_tables(self):
@@ -31,36 +32,50 @@ class DataBaseIO():
     def execute_query(self, table, select='*', parm='', regex=''):
 
         if parm != '':
-            results = [self.__cur__.execute('select ? from ? where ? = ?',(select, table, parm, regex))]
+            results = [self.__cur__.execute('select {} from {} where {} = {}'
+                                            .format(select, table, parm, regex)).fetchall()]
         else:
-            results = [self.__cur__.execute('select ? from ?',(select,table))]
+            results = [self.__cur__.execute('select {} from {}'.format(select, table)).fetchall()]
         return results
 
     def create_table(self, table_name, *args):
         with self.__db__:
-            """
-            (example create statement from http://www.sqlitetutorial.net/sqlite-create-table/)
-            CREATE TABLE contacts (
-            contact_id integer PRIMARY KEY,
-            first_name text NOT NULL,
-            last_name text NOT NULL,
-            email text NOT NULL UNIQUE,
-            phone text NOT NULL UNIQUE
-            );
-            """
-            sql = """Create Table ? ( ? )""", (table_name, args)
-            print(sql)
-            self.__cur__.execute("Create Table ? if not exists ( ? )", [table_name, args])
 
-    def add_record(self, table_name, *args):
-        self.__cur__.execute('insert into ' + table_name + ' Values ' + str(*args))
-        print(self.WIP)
+            sql = """Create Table if not exists {} ({})""".format(table_name, "".join(args))
+            self._execute_sql_(sql)
 
-    def update_record(self):
-        print(self.WIP)
+    def add_record(self, table_name, columns='', *args):
+        """
+        https://www.jetbrains.com/help/pycharm/creating-documentation-comments.html
+        :param table_name: any single string
+        :param columns: use '' for implicit entries
+        :param args: all values to insert, i.e: "'1','foo'" or "'bar'"
+        :return: void
+        """
+        if columns != '':
+            sql = "insert into {} ({}) values ({})".format(table_name, "".join(columns), "".join(args))
 
-    def delete_record(self, table_name, parm, regex):
-        self.__cur__.execute("delete from ? where ? = ?", (table_name, parm, regex))
+        else:
+            sql = "insert into {} values ({})".format(table_name, "".join(args))
+        self._execute_sql_(sql)
+
+    def update_record(self, table_name, column, unique_id="", new_value=""):
+        """
+        UPDATE table
+        SET column_1 = new_value_1,
+            column_2 = new_value_2
+        WHERE
+            search_condition
+        """
+        if unique_id != "":
+            sql = "UPDATE {} SET {} = '{}' WHERE id = {}".format(table_name, column, new_value, unique_id)
+            self._execute_sql_(sql)
+
+    def delete_record(self, table_name, parm, regex=""):
+        if regex != "":
+            self._execute_sql_("delete from {} where {} = '{}'".format(table_name, parm, regex))
+        else:
+            print("Too broad of delete clause, aborting")
 
     def close(self):
         self.__db__ = None

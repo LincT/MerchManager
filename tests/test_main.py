@@ -7,4 +7,4 @@ class TestMain(TestCase):
         self.assertEqual(None, None)
 
 if __name__ == '__main__':
-    main
+    main()
