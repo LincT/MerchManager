@@ -10,8 +10,9 @@ class DataBaseIO():
         self.__db__ = sqlite3.connect(dbname)
         self.__cur__ = self.__db__.cursor()
 
-    def _execute_sql_(self, sql=""):
+    def __execute_sql__(self, sql=""):
         with self.__db__:
+            # other methods should have sanitized sql before it reaches this method.
             statement = str(sql).replace(";", "")  # some effort to prevent hostile inputs
             self.__cur__.execute(statement)
 
@@ -33,8 +34,14 @@ class DataBaseIO():
 
     def execute_query(self, table, select='*', parm='', regex=''):
         # returns data as a list, each row as a tuple
+        # stripping out some characters known for sql injection attacks
+        table = table.strip("'").strip(";")
+        select = select.strip("'").strip(";")
+        parm = parm.strip("'").strip(";")
+        regex = regex.strip("'").strip(";")
+
         if parm != '':
-            results = self.__cur__.execute('select {} from {} where {} = {}'
+            results = self.__cur__.execute("select {} from {} where {} = '{}'"
                                            .format(select, table, parm, regex)).fetchall()
         else:
             results = self.__cur__.execute('select {} from {}'.format(select, table)).fetchall()
@@ -42,9 +49,11 @@ class DataBaseIO():
 
     def create_table(self, table_name, *args):
         with self.__db__:
-
-            sql = """Create Table if not exists {} ({})""".format(table_name, "".join(args))
-            self._execute_sql_(sql)
+            table_name = table_name.strip("'").strip(";")
+            args = str(args).replace("'", "").replace(";","").strip("(").strip(")").strip(",")
+            arg_list = [each for each in args.split(",")]
+            sql = "Create Table if not exists {} ({})".format(table_name, ",".join(arg_list))
+            self.__execute_sql__(sql)
 
     def add_record(self, table_name, columns='', *args):
         """
@@ -59,7 +68,7 @@ class DataBaseIO():
 
         else:
             sql = "insert into {} values ({})".format(table_name, "".join(args))
-        self._execute_sql_(sql)
+        self.__execute_sql__(sql)
 
     def update_record(self, table_name, column, unique_id="", new_value=""):
         """
@@ -71,13 +80,19 @@ class DataBaseIO():
         """
         if unique_id != "":
             sql = "UPDATE {} SET {} = '{}' WHERE id = {}".format(table_name, column, new_value, unique_id)
-            self._execute_sql_(sql)
+            self.__execute_sql__(sql)
 
     def delete_record(self, table_name, parm, regex=""):
         if regex != "":
-            self._execute_sql_("delete from {} where {} = '{}'".format(table_name, parm, regex))
+            self.__execute_sql__("delete from {} where {} = '{}'".format(table_name, parm, regex))
         else:
             print("Too broad of delete clause, aborting")
+
+    # def drop_table(self, table_name):
+    #     # comment out this method unless absolutely needed. normally actions like this would
+    #     # be for db admins only to perform
+    #     with self.__db__:
+    #         self.__execute_sql__("DROP TABLE IF EXISTS {}".format(table_name))
 
     def close(self):
         self.__db__ = None

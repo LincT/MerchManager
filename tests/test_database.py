@@ -45,12 +45,12 @@ class TestMain(TestCase):
         self.assertEqual(val1, val2)
 
     def test_crud(self):
-        # full crud test w/ a table
+        # full crud test w/ a table (should probably split this into smaller tests at some point)
         # check that we can add a table w/ some data
-        print("self.test_spew()")
+        print("test_crud()")
         table_name = "test_table"
 
-        # CREATE
+        # CREATE:
         self.database.create_table(table_name, "id INTEGER PRIMARY KEY AUTOINCREMENT, some_text TEXT")
         self.assertIn("test_table", str(self.database.spew_tables()))
         # check that added table has columns
@@ -62,19 +62,19 @@ class TestMain(TestCase):
         self.database.add_record(table_name, "some_text", "'bar'")
         # add more explicit data
         self.database.add_record(table_name, '', "'3','foobar'")
-        # READ
+        # READ:
         results = list(self.database.execute_query(table_name))
         # print(results)
         # check if record present
         self.assertIn("foo", str(results))
 
-        # UPDATE try testing a change to a record
+        # UPDATE: try testing a change to a record
         self.database.update_record(table_name, "some_text", "1", "fu")
         results = list(self.database.execute_query(table_name))
         # print(results)
         self.assertIn("fu", str(results))
 
-        # DELETE deleting test
+        # DELETE: deleting test
         self.database.delete_record(table_name, 'some_text', 'fu')
         results = list(self.database.execute_query(table_name))
         # print(results)
