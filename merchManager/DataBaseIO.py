@@ -2,9 +2,9 @@ import sqlite3
 
 
 class DataBaseIO():
+    # this class should handle all of the sql work, and return only standard memory objects
     __db__ = None
     __cur__ = None
-    WIP = "This feature is not yet implemented"
 
     def __init__(self, dbname):
         self.__db__ = sqlite3.connect(dbname)
@@ -13,7 +13,6 @@ class DataBaseIO():
     def _execute_sql_(self, sql=""):
         with self.__db__:
             statement = str(sql).replace(";", "")  # some effort to prevent hostile inputs
-            print(statement)
             self.__cur__.execute(statement)
 
     def spew_header(self, table_name):
@@ -26,16 +25,19 @@ class DataBaseIO():
     def spew_tables(self):
         with self.__db__:
             # https://stackoverflow.com/questions/305378/list-of-tables-db-schema-dump-etc-using-the-python-sqlite3-api
-            tables = [self.__cur__.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()]
+            tables = []
+            tables_tup = self.__cur__.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
+            for each in tables_tup:
+                tables.append(",".join(each))
         return tables
 
     def execute_query(self, table, select='*', parm='', regex=''):
-
+        # returns data as a list, each row as a tuple
         if parm != '':
-            results = [self.__cur__.execute('select {} from {} where {} = {}'
-                                            .format(select, table, parm, regex)).fetchall()]
+            results = self.__cur__.execute('select {} from {} where {} = {}'
+                                           .format(select, table, parm, regex)).fetchall()
         else:
-            results = [self.__cur__.execute('select {} from {}'.format(select, table)).fetchall()]
+            results = self.__cur__.execute('select {} from {}'.format(select, table)).fetchall()
         return results
 
     def create_table(self, table_name, *args):
