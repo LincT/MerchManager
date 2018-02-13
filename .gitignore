@@ -1,6 +1,6 @@
 .idea
-scratchpad.py
+merchManager/_scratchpad.py
 sqlite3.exe
 test.db
 sales.db
-merchManager\scratchpad.py
+merchManager/scratchpad.py
